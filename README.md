@@ -3,7 +3,7 @@ This is a VM with a small 16 bit instruction set, an assembler and an assembly l
 (I will write a full documented readme in the next days)<br>
 
 ## A4X
-This is the assembly language used with avm_assembler, an example of a factorial expression can be found in src/factorial.a4x
+This is the assembly language used with avm_assembler, an example of a factorial program can be found in src/factorial.a4x
 <br>
 ## Compilation
 I only use stdio string and stdlib so you just need to
