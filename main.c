@@ -177,17 +177,8 @@ void execute() {
             break;
         case 10:
             // pop
-            if(val == 1) {
-                printf("pop r%d\n", p1);
-                *r[p1] = stack[sp-1];
-            }
-            else {
-                printf("pop\n");
-                printf("%d stack value\n", stack[sp]);
-                r5 = stack[sp-1];
-            }
-            stack[sp-1] = 0;
             sp--;
+            *r[p1] = stack[sp];
             break;
         case 11:
             // jz
