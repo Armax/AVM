@@ -97,6 +97,17 @@ unsigned char memory[65535];
 // Stack
 uint16_t stack[256];
 
+int is_a_register(char* str) {
+    char* registers[6] = {"r0","r1","r2","r3","r4","r5"};
+    
+    for(int x=0; x<6; x++) {
+        if(strcmp(registers[x],str)==0) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
 short fetch() {
     t_instr = 0;
     memcpy(&t_instr, &memory[pc], sizeof(t_instr));     // reading 2 byte
@@ -122,37 +133,58 @@ void execute() {
             break;
         case 1:
             // ldr
+            if(p1 > 8 || p1 < 0) {
+                exit(0);
+            }
             printf("lr r%d #%d\n", p1, val);
             *r[p1] = val;
             break;
         case 2:
             // add
+            if(p1 > 8 || p1 < 0) {
+                exit(0);
+            }
             printf("add r%d r%d r%d\n", p1, p2, p3);
             *r[p1] = *r[p2] + *r[p3];
             printf("[debug] result from add: %d\n", *r[p1]);
             break;
         case 3:
             // sb
+            if(p1 > 8 || p1 < 0 || p2 > 8 || p2 < 0 || p2 > 8 || p2 < 0) {
+                exit(0);
+            }
             printf("sb r%d r%d r%d\n", p1, p2, p3);
             *r[p1] = *r[p2] - *r[p3];
             break;
         case 4:
             // and
+            if(p1 > 8 || p1 < 0 || p2 > 8 || p2 < 0 || p2 > 8 || p2 < 0) {
+                exit(0);
+            }
             printf("and r%d r%d r%d\n", p1, p2, p3);
             *r[p1] = *r[p2] & *r[p3];
             break;
         case 5:
             // or
+            if(p1 > 8 || p1 < 0 || p2 > 8 || p2 < 0 || p2 > 8 || p2 < 0) {
+                exit(0);
+            }
             printf("or r%d r%d r%d\n", p1, p2, p3);
             *r[p1] = *r[p2] || *r[p3];
             break;
         case 6:
             // not
+            if(p1 > 8 || p1 < 0) {
+                exit(0);
+            }
             printf("not r%d", p1);
             *r[p1] = !*r[p1];
             break;
         case 7:
             // or
+            if(p1 > 8 || p1 < 0 || p2 > 8 || p2 < 0 || p2 > 8 || p2 < 0) {
+                exit(0);
+            }
             printf("xor r%d r%d r%d\n", p1, p2, p3);
             *r[p1] = *r[p2] ^ *r[p3];
             break;
@@ -165,6 +197,9 @@ void execute() {
         case 9:
             // push
             if(val == 1) {
+                if(p1 > 8 || p1 < 0) {
+                    exit(0);
+                }
                 printf("push r%d\n", p1);
                 stack[sp] = *r[p1];
             }
@@ -190,6 +225,9 @@ void execute() {
             break;
         case 12:
             // cmp
+            if(p1 > 8 || p1 < 0 || p2 > 8 || p2 < 0) {
+                exit(0);
+            }
             printf("cmp r%d r%d\n", p1, p2);
             if(*r[p1]==*r[p2]) {
                 zf = 1;
@@ -200,12 +238,18 @@ void execute() {
             break;
         case 13:
             // mul
+            if(p1 > 8 || p1 < 0 || p2 > 8 || p2 < 0 || p2 > 8 || p2 < 0) {
+                exit(0);
+            }
             printf("mul r%d r%d r%d\n", p1, p2, p3);
             *r[p1] = *r[p2] * *r[p3];
             printf("[debug] result from mul: %d\n", *r[p1]);
             break;
         case 14:
             // mv
+            if(p1 > 8 || p1 < 0 || p2 > 8 || p2 < 0) {
+                exit(0);
+            }
             printf("mv r%d r%d\n", p1, p2);
             *r[p1] = *r[p2];
             break;
