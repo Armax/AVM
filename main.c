@@ -337,7 +337,7 @@ int main(int argc, const char * argv[]) {
     
     printf("Welcome to Arm4x VM\n\n");
     printf("[avm]$ ");
-    scanf("%s", cmd);
+    scanf("%50s", cmd);
     exec(cmd);
     
     //run();
