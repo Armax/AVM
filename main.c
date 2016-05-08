@@ -233,7 +233,7 @@ void ir() {
         printf("r%d: %016llx ", x, *r[x]);
     }
     printf("sp: %016llx ", sp);
-    printf("zf: %016llx ", sp);
+    printf("zf: %016llx ", zf);
     printf( "\n" );
 }
 
