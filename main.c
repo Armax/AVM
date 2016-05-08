@@ -154,7 +154,7 @@ void execute() {
         case 5:
             // or
             printf("or r%d r%d r%d\n", p1, p2, p3);
-            *r[p1] = *r[p2] || *r[p3];
+            *r[p1] = *r[p2] | *r[p3];
             break;
         case 6:
             // not
