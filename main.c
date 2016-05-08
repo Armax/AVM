@@ -95,7 +95,7 @@ short running = 1;
 unsigned char memory[65535];
 
 // Stack
-uint16_t stack[256];
+uint64_t stack[256];
 
 short fetch() {
     t_instr = 0;
