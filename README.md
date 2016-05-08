@@ -19,7 +19,7 @@ First of all you should write a program with the A4X syntax, at the moment check
 ```
 Now you can start the AVM:
 ```
-./avm src/factorial.a4x factorial
+./avm
 ```
 now just paste the binary path and press enter to start the execution
 <br>
