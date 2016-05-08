@@ -62,19 +62,19 @@
 #include <string.h>
 
 // Registers
-uint16_t r0         = 0;
-uint16_t r1         = 0;
-uint16_t r2         = 0;
-uint16_t r3         = 0;
-uint16_t r4         = 0;
-uint16_t r5         = 0;
-uint16_t sp         = 0; // stack pointer
-uint16_t ns         = 0; // negative sub
-uint16_t zf         = 0; // multi purpose flag
+uint64_t r0         = 0;
+uint64_t r1         = 0;
+uint64_t r2         = 0;
+uint64_t r3         = 0;
+uint64_t r4         = 0;
+uint64_t r5         = 0;
+uint64_t sp         = 0; // stack pointer
+uint64_t ns         = 0; // negative sub
+uint64_t zf         = 0; // multi purpose flag
 
 // still 7 free register maybe I will implement them later
 
-uint16_t* r[9] = { &r0, &r1, &r2, &r3, &r4, &r5, &sp, &ns, &zf };
+uint64_t* r[9] = { &r0, &r1, &r2, &r3, &r4, &r5, &sp, &ns, &zf };
 
 // Temp value / registers / address
 uint16_t t_instr    = 0;
@@ -134,17 +134,7 @@ void execute() {
         case 3:
             // sb
             printf("sb r%d r%d r%d\n", p1, p2, p3);
-            // if p3 > p2
-            if(*r[p3] > *r[p2]) {
-                ns = 1;
-                *r[p1] = *r[p3] - *r[p2];
-                printf("[debug] result from sub: -%d\n", *r[p1]);
-            }
-            else {
-                ns = 0;
-                *r[p1] = *r[p2] - *r[p3];
-                printf("[debug] result from sub: %d\n", *r[p1]);
-            }
+            *r[p1] = *r[p2] - *r[p3];
             break;
         case 4:
             // and
@@ -154,7 +144,7 @@ void execute() {
         case 5:
             // or
             printf("or r%d r%d r%d\n", p1, p2, p3);
-            *r[p1] = *r[p2] | *r[p3];
+            *r[p1] = *r[p2] || *r[p3];
             break;
         case 6:
             // not
@@ -240,10 +230,10 @@ void execute() {
 void ir() {
     printf( "regs = " );
     for(int x=0; x<6; x++) {
-        printf("r%d: %016x ", x, *r[x]);
+        printf("r%d: %016llx ", x, *r[x]);
     }
-    printf("sp: %016x ", sp);
-    printf("zf: %016x ", sp);
+    printf("sp: %016llx ", sp);
+    printf("zf: %016llx ", sp);
     printf( "\n" );
 }
 
@@ -270,7 +260,7 @@ void run() {
         // decode
         execute();              // execute
         if(running) {
-            //ir();               // uncomment to show registers after every instruction
+            ir();               // uncomment to show registers after every instruction
             //p_stack();          // uncomment to show stack contents after every instruction
             //p_raw_memory()    // uncomment to show memory contents after every instruction
         }
@@ -318,4 +308,3 @@ int main(int argc, const char * argv[]) {
     //run();
     return 0;
 }
-
