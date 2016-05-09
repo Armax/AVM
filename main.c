@@ -61,6 +61,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+// Stack
+uint16_t stack[256];
+
 // Registers
 uint16_t r0         = 0;
 uint16_t r1         = 0;
@@ -93,9 +96,6 @@ short running = 1;
 
 // Memory
 unsigned char memory[65535];
-
-// Stack
-uint16_t stack[256];
 
 int is_a_register(char* str) {
     char* registers[6] = {"r0","r1","r2","r3","r4","r5"};
@@ -196,6 +196,10 @@ void execute() {
             break;
         case 9:
             // push
+            if(sp>255) {
+                printf("Invalid stack pointer\n");
+                exit(0);
+            }
             if(val == 1) {
                 if(p1 > 8 || p1 < 0) {
                     exit(0);
@@ -212,6 +216,10 @@ void execute() {
             break;
         case 10:
             // pop
+            if(sp==0) {
+                printf("Invalid stack pointer\n");
+                exit(0);
+            }
             sp--;
             *r[p1] = stack[sp];
             break;
@@ -316,11 +324,9 @@ void exec(char filepath[]) {
         
         if(filelen > 65535) {
             printf("File too large\n");
-            fclose(fp);
         }
         else {
             fread(memory, 65535, filelen, fp);
-            fclose(fp);
             run();
         }
     }
