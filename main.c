@@ -96,10 +96,6 @@ uint16_t opnum;
 int t_p1, t_p2, t_p3, t_val;
 
 
-//Opcode function pointers array
-void (*opcodes[OPCODE_AMOUNT]) (int p1, int p2, int p3, int val);
-
-
 int is_a_register(char* str) {
     char* registers[6] = {"r0","r1","r2","r3","r4","r5"};
     
@@ -283,23 +279,26 @@ void mv(int p1, int p2, int p3, int val){
     *r[p1] = *r[p2];
 }
 
-void init_opcodes(){
-	opcodes[0x00] = ps;
-	opcodes[0x01] = ldr;
-	opcodes[0x02] = add;
-	opcodes[0x03] = sb;
-	opcodes[0x04] = and;
-	opcodes[0x05] = or;
-	opcodes[0x06] = not;
-	opcodes[0x07] = xor;
-	opcodes[0x08] = jmp;
-	opcodes[0x09] = push;
-	opcodes[0x0A] = pop;
-	opcodes[0x0B] = jz;
-	opcodes[0x0C] = cmp;
-	opcodes[0x0D] = mul;
-	opcodes[0x0E] = mv;
-}
+
+//Opcode function pointers array
+void (*opcodes[OPCODE_AMOUNT]) (int p1, int p2, int p3, int val) = {
+	ps,
+	ldr,
+	add,
+	sb,
+	and,
+	or,
+	not,
+	xor,
+	jmp,
+	push,
+	pop,
+	jz,
+	cmp,
+	mul,
+	mv	
+};
+
 
 void execute() {
 	if(opnum < OPCODE_AMOUNT){
@@ -380,7 +379,6 @@ void exec(char filepath[]) {
 
 int main(int argc, const char * argv[]) {
     char cmd[50];
-    init_opcodes();
     printf("Welcome to Arm4x VM\n\n");
     printf("[avm]$ ");
     scanf("%49s", cmd);
