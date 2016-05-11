@@ -60,9 +60,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
+
+//Total amount of opcodes
+#define OPCODE_AMOUNT 0x0F
 
 // Stack
 uint16_t stack[256];
+
+// Memory
+unsigned char memory[65535];
 
 // Registers
 uint16_t r0         = 0;
@@ -71,22 +78,12 @@ uint16_t r2         = 0;
 uint16_t r3         = 0;
 uint16_t r4         = 0;
 uint16_t r5         = 0;
-uint16_t sp         = 0; // stack pointer
-uint16_t ns         = 0; // negative sub
-uint16_t zf         = 0; // multi purpose flag
+uint16_t sp         = 0; // Stack Pointer
+uint16_t ns         = 0; // Negative Sub
+uint16_t zf         = 0; // Multipurpose Flag
 
 // still 7 free register maybe I will implement them later
-
 uint16_t* r[9] = { &r0, &r1, &r2, &r3, &r4, &r5, &sp, &ns, &zf };
-
-// Temp value / registers / address
-uint16_t t_instr    = 0;
-uint16_t argument   = 0;
-int opnum           = 0;
-int p1              = 0;
-int p2              = 0;
-int p3              = 0;
-int val             = 0;
 
 // Program counter
 int pc = 0;
@@ -94,8 +91,10 @@ int pc = 0;
 // State
 short running = 1;
 
-// Memory
-unsigned char memory[65535];
+//Temporary values
+uint16_t opnum; 
+int t_p1, t_p2, t_p3, t_val;
+
 
 int is_a_register(char* str) {
     char* registers[6] = {"r0","r1","r2","r3","r4","r5"};
@@ -109,7 +108,7 @@ int is_a_register(char* str) {
 }
 
 short fetch() {
-    t_instr = 0;
+    uint16_t t_instr = 0;
     memcpy(&t_instr, &memory[pc], sizeof(t_instr));     // reading 2 byte
     t_instr = (t_instr>>8) | (t_instr<<8);              // endianess
     pc = pc+2;
@@ -118,156 +117,196 @@ short fetch() {
 
 void decode(short op) {
     opnum   = (op & 0xF000) >> 12;
-    p1      = (op & 0xF00 ) >>  8;
-    p2      = (op & 0xF0  ) >>  4;
-    p3      = (op & 0xF   );
-    val     = (op & 0xFF  );
+    t_p1      = (op & 0xF00 ) >>  8;
+    t_p2      = (op & 0xF0  ) >>  4;
+    t_p3      = (op & 0xF   );
+    t_val     = (op & 0xFF  );
 }
 
-void execute() {
-    switch(opnum) {
-        case 0:
-            // ps
-            printf("waiting...\n");
-            running = 0;
-            break;
-        case 1:
-            // ldr
-            if(p1 > 8 || p1 < 0) {
-                exit(0);
-            }
-            printf("lr r%d #%d\n", p1, val);
-            *r[p1] = val;
-            break;
-        case 2:
-            // add
-            if(p1 > 8 || p1 < 0) {
-                exit(0);
-            }
-            printf("add r%d r%d r%d\n", p1, p2, p3);
-            *r[p1] = *r[p2] + *r[p3];
-            printf("[debug] result from add: %d\n", *r[p1]);
-            break;
-        case 3:
-            // sb
-            if(p1 > 8 || p1 < 0 || p2 > 8 || p2 < 0 || p2 > 8 || p2 < 0) {
-                exit(0);
-            }
-            printf("sb r%d r%d r%d\n", p1, p2, p3);
-            *r[p1] = *r[p2] - *r[p3];
-            break;
-        case 4:
-            // and
-            if(p1 > 8 || p1 < 0 || p2 > 8 || p2 < 0 || p2 > 8 || p2 < 0) {
-                exit(0);
-            }
-            printf("and r%d r%d r%d\n", p1, p2, p3);
-            *r[p1] = *r[p2] & *r[p3];
-            break;
-        case 5:
-            // or
-            if(p1 > 8 || p1 < 0 || p2 > 8 || p2 < 0 || p2 > 8 || p2 < 0) {
-                exit(0);
-            }
-            printf("or r%d r%d r%d\n", p1, p2, p3);
-            *r[p1] = *r[p2] || *r[p3];
-            break;
-        case 6:
-            // not
-            if(p1 > 8 || p1 < 0) {
-                exit(0);
-            }
-            printf("not r%d", p1);
-            *r[p1] = !*r[p1];
-            break;
-        case 7:
-            // or
-            if(p1 > 8 || p1 < 0 || p2 > 8 || p2 < 0 || p2 > 8 || p2 < 0) {
-                exit(0);
-            }
-            printf("xor r%d r%d r%d\n", p1, p2, p3);
-            *r[p1] = *r[p2] ^ *r[p3];
-            break;
-        case 8:
-            // jmp
-            argument = fetch();
-            printf("jmp 0x%04x\n", argument);
-            pc = argument;
-            break;
-        case 9:
-            // push
-            if(sp>255) {
-                printf("Invalid stack pointer\n");
-                exit(0);
-            }
-            if(val == 1) {
-                if(p1 > 8 || p1 < 0) {
-                    exit(0);
-                }
-                printf("push r%d\n", p1);
-                stack[sp] = *r[p1];
-            }
-            else {
-                argument = fetch();
-                printf("push 0x%04x\n", argument);
-                stack[sp] = argument;
-            }
-            sp++;
-            break;
-        case 10:
-            // pop
-            if(sp==0) {
-                printf("Invalid stack pointer\n");
-                exit(0);
-            }
-            sp--;
-            *r[p1] = stack[sp];
-            break;
-        case 11:
-            // jz
-            argument = fetch();
-            printf("jz 0x%04x\n", argument);
-            if(zf==1) {
-                pc = argument;
-            }
-            break;
-        case 12:
-            // cmp
-            if(p1 > 8 || p1 < 0 || p2 > 8 || p2 < 0) {
-                exit(0);
-            }
-            printf("cmp r%d r%d\n", p1, p2);
-            if(*r[p1]==*r[p2]) {
-                zf = 1;
-            }
-            else {
-                zf = 0;
-            }
-            break;
-        case 13:
-            // mul
-            if(p1 > 8 || p1 < 0 || p2 > 8 || p2 < 0 || p2 > 8 || p2 < 0) {
-                exit(0);
-            }
-            printf("mul r%d r%d r%d\n", p1, p2, p3);
-            *r[p1] = *r[p2] * *r[p3];
-            printf("[debug] result from mul: %d\n", *r[p1]);
-            break;
-        case 14:
-            // mv
-            if(p1 > 8 || p1 < 0 || p2 > 8 || p2 < 0) {
-                exit(0);
-            }
-            printf("mv r%d r%d\n", p1, p2);
-            *r[p1] = *r[p2];
-            break;
-        default:
-            // not implemented
-            printf("unexpected instruction: %d\n", opnum);
-            break;
-            
+//
+//OPCODES
+//
+//Opcode: 0x00 Name: ps
+void ps(int p1, int p2, int p3, int val){
+	printf("waiting...\n");
+	running = 0;
+}
+
+//Opcode: 0x01 Name: ldr
+void ldr(int p1, int p2, int p3, int val)
+{
+	if(p1 > 8 || p1 < 0) {
+        exit(0);
     }
-    
+    printf("lr r%d #%d\n", p1, val);
+    *r[p1] = val;
+}
+
+//Opcode: 0x02 Name: add
+void add(int p1, int p2, int p3, int val){
+	if(p1 > 8 || p1 < 0) {
+        exit(0);
+    }
+    printf("add r%d r%d r%d\n", p1, p2, p3);
+    *r[p1] = *r[p2] + *r[p3];
+    printf("[debug] result from add: %d\n", *r[p1]);
+}
+
+//Opcode: 0x03 Name: sb
+void sb(int p1, int p2, int p3, int val){
+	if(p1 > 8 || p1 < 0 || p2 > 8 || p2 < 0 || p2 > 8 || p2 < 0) {
+        exit(0);
+    }
+    printf("sb r%d r%d r%d\n", p1, p2, p3);
+    *r[p1] = *r[p2] - *r[p3];
+}
+
+//Opcode: 0x04 Name: and
+void and(int p1, int p2, int p3, int val){
+	if(p1 > 8 || p1 < 0 || p2 > 8 || p2 < 0 || p2 > 8 || p2 < 0) {
+        exit(0);
+    }
+    printf("and r%d r%d r%d\n", p1, p2, p3);
+    *r[p1] = *r[p2] & *r[p3];
+}
+
+//Opcode: 0x05 Name: or
+void or(int p1, int p2, int p3, int val){
+	if(p1 > 8 || p1 < 0 || p2 > 8 || p2 < 0 || p2 > 8 || p2 < 0) {
+        exit(0);
+    }
+    printf("or r%d r%d r%d\n", p1, p2, p3);
+    *r[p1] = *r[p2] || *r[p3];
+}
+
+//Opcode: 0x06 Name: not
+void not(int p1, int p2, int p3, int val){
+	if(p1 > 8 || p1 < 0) {
+        exit(0);
+    }
+    printf("not r%d", p1);
+    *r[p1] = !*r[p1];
+}
+
+//Opcode: 0x07 Name: xor
+void xor(int p1, int p2, int p3, int val){
+	if(p1 > 8 || p1 < 0 || p2 > 8 || p2 < 0 || p2 > 8 || p2 < 0) {
+        exit(0);
+    }
+    printf("xor r%d r%d r%d\n", p1, p2, p3);
+    *r[p1] = *r[p2] ^ *r[p3];;
+}
+
+//Opcode: 0x08 Name: jmp
+void jmp(int p1, int p2, int p3, int val){
+	uint16_t argument = fetch();
+    printf("jmp 0x%04x\n", argument);
+    pc = argument;
+}
+
+//Opcode: 0x09 Name: push
+void push(int p1, int p2, int p3, int val){
+	uint16_t argument;
+	
+	if(sp>255) {
+        printf("Invalid stack pointer\n");
+        exit(0);
+    }
+    if(val == 1) {
+        if(p1 > 8 || p1 < 0) {
+            exit(0);
+        }
+        printf("push r%d\n", p1);
+        stack[sp] = *r[p1];
+    }
+    else {
+        argument = fetch();
+        printf("push 0x%04x\n", argument);
+        stack[sp] = argument;
+    }
+    sp++;
+}
+
+//Opcode: 0x0A Name: pop
+void pop(int p1, int p2, int p3, int val){
+	if(r[sp]==0) {
+        printf("Invalid stack pointer\n");
+        exit(0);
+    }
+    sp--;
+    *r[p1] = stack[sp];
+}
+
+//Opcode: 0x0B Name: jz
+void jz(int p1, int p2, int p3, int val){
+	uint16_t argument = fetch();
+    printf("jz 0x%04x\n", argument);
+    if(zf==1) {
+        pc = argument;
+    }
+}
+
+//Opcode: 0x0C Name: cmp
+void cmp(int p1, int p2, int p3, int val){
+	if(p1 > 8 || p1 < 0 || p2 > 8 || p2 < 0) {
+        exit(0);
+    }
+    printf("cmp r%d r%d\n", p1, p2);
+    if(*r[p1]==*r[p2]) {
+        zf = 1;
+    }
+    else {
+        zf = 0;
+    }
+}
+
+//Opcode: 0x0D Name: mul
+void mul(int p1, int p2, int p3, int val){
+	if(p1 > 8 || p1 < 0 || p2 > 8 || p2 < 0 || p2 > 8 || p2 < 0) {
+        exit(0);
+    }
+    printf("mul r%d r%d r%d\n", p1, p2, p3);
+    *r[p1] = *r[p2] * *r[p3];
+    printf("[debug] result from mul: %d\n", *r[p1]);
+}
+
+//Opcode: 0x0E Name: mv
+void mv(int p1, int p2, int p3, int val){
+	if(p1 > 8 || p1 < 0 || p2 > 8 || p2 < 0) {
+        exit(0);
+    }
+    printf("mv r%d r%d\n", p1, p2);
+    *r[p1] = *r[p2];
+}
+
+
+//Opcode function pointers array
+void (*opcodes[OPCODE_AMOUNT]) (int p1, int p2, int p3, int val) = {
+	ps,
+	ldr,
+	add,
+	sb,
+	and,
+	or,
+	not,
+	xor,
+	jmp,
+	push,
+	pop,
+	jz,
+	cmp,
+	mul,
+	mv	
+};
+
+
+void execute() {
+	if(opnum < OPCODE_AMOUNT){
+		(*opcodes[opnum]) (t_p1, t_p2, t_p3, t_val); 
+	}
+	else{
+		printf("unexpected instruction: %d\n", opnum);
+	}
 }
 
 void ir() {
@@ -275,8 +314,8 @@ void ir() {
     for(int x=0; x<6; x++) {
         printf("r%d: %016x ", x, *r[x]);
     }
-    printf("sp: %016x ", sp);
-    printf("zf: %016x ", zf);
+    printf("sp: %016x ", *r[sp]);
+    printf("zf: %016x ", *r[zf]);
     printf( "\n" );
 }
 
@@ -340,7 +379,6 @@ void exec(char filepath[]) {
 
 int main(int argc, const char * argv[]) {
     char cmd[50];
-    
     printf("Welcome to Arm4x VM\n\n");
     printf("[avm]$ ");
     scanf("%49s", cmd);
